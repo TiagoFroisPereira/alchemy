@@ -1,6 +1,14 @@
-[
-    {
-        "publicKey":"",
-        "privateKey":""
+{
+    "0x024ac4a6d017f3aa6d16a04b2608796195cdc7c91835458e5b573d2a00142470ea": {
+        "privateKey": "b7458d1e42fe7249f0baceddd4e9c9390ccbfbb54a2675ecc3469545ae897b15",
+        "balance": 100
+    },
+    "0x0249b5c026ee140338b1e4e9aaac14514feb2463e2a2f0138cc5130108d57204b7": {
+        "privateKey": "2a8a269cd340794d53e6f3e25ba207bd4dfdf8b512f0bf58bb6efc6e6368a247",
+        "balance": 50
+    },
+    "0x030cd627f9e1a4b8f5f7e051675b035eb5aba8a8a8eb0b9bb9eb4708bafaf7ebe8": {
+        "privateKey": "6d757afbf0701b8775c81d5da1d590ac6789829da47c6ed7b092f978360aaeba",
+        "balance": 75
     }
-]
+}

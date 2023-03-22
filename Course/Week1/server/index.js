@@ -1,43 +1,53 @@
+const fs = require('fs');
 const express = require("express");
 const app = express();
 const cors = require("cors");
 const secp = require("ethereum-cryptography/secp256k1");
-const utils = require("ethereum-cryptography/utils");
+const { toHex, utf8ToBytes, hexToBytes } = require("ethereum-cryptography/utils");
 const { keccak256 } = require("ethereum-cryptography/Keccak");
 const port = 3042;
 
 app.use(cors());
 app.use(express.json());
 
-const balances = {
-    "027ce17f7ab058c703f478dc2897a461e6035b9a09380b35af2868c154e912651e": 100,
-    "02c5cfccfdd7c8867aa4ace823d263a45e5d083c18e0bf2cf06d69c1e1ab378a53": 50,
-    "043b380e894b4448ee21c258267b3f885ceae6ffcf9041e0b3bbb7e8f3f024f4702682e1dd36cc4bb70193187839bd776093ae8f1068345c78847d913294061fbe": 75,
-};
+var wallets = LoadSampleWallets();
 
-app.get("/balance/:signature", (req, res) => {
-    const { signature } = req.params;
-    const hashMessage = keccak256(utils.utf8ToBytes(""));
-    const address = utils.toHex(secp.recoverPublicKey(hashMessage, signature,1));
-    const balance = balances[address] || 0;
+app.get("/balance/:address", (req, res) => {
+    const { address } = req.params;
+    const balance = wallets[address].balance || 0;
     res.send({ balance });
 });
 
 app.post("/send", (req, res) => {
-    const { signature, recipient, amount } = req.body;
-    const hashMessage = sha256(utils.utf8ToBytes(recipient + amount));
-    const sender = secp.recoverPublicKey(hashMessage, signature);
-    if (sender === null)
-        return;
-    setInitialBalance(sender);
-    setInitialBalance(recipient);
+    const { sender, recipient, amount } = req.body;
+    console.log(req.body);
 
-    if (balances[sender] < amount) {
-        res.status(400).send({ message: "Not enough funds!" });
+    if (sender === null || wallets[sender] === null || wallets[sender].signature === null) {
+        res.status(400).send({ message: "wallet not found!" });
     } else {
-        balances[sender] -= amount;
-        balances[recipient] += amount;
-        res.send({ balance: balances[sender] });
+        setInitialBalance(sender);
+        setInitialBalance(recipient);
+        var balance = wallets[sender].balance;
+        if (balance < amount) {
+            res.status(400).send({ message: "Not enough funds!" });
+        } else {
+            wallets[sender].balance -= amount;
+            wallets[recipient].balance += amount;
+            res.send({ balance: wallets[sender].balance });
+        }
+    }
+});
+app.post("/sign", async (req, res) => {
+    const { sender, recipient, amount } = req.body;
+
+    var wallet = wallets[sender];
+    if (wallet == null) {
+        res.status(400).send({ message: "sender not exist" });
+    } else {
+        const messageHash = keccak256(utf8ToBytes(recipient + amount));
+        const signature = await secp.sign(messageHash, hexToBytes(wallet.privateKey));
+        wallets[sender].signature = toHex(signature);
+        res.send({ signature: wallets[sender].signature });
     }
 });
 
@@ -46,7 +56,21 @@ app.listen(port, () => {
 });
 
 function setInitialBalance(address) {
-    if (!balances[address]) {
-        balances[address] = 0;
+    if (!wallets[address]) {
+        wallets[address] = {
+            balance: 0
+        };
+    }
+}
+
+function LoadSampleWallets() {
+    if (wallets != null)
+        return wallets;
+    try {
+        const data = fs.readFileSync('../sampleWallets.json', 'utf8');
+        wallets = JSON.parse(data);
+        return wallets;
+    } catch (err) {
+        console.error(err);
     }
 }
