@@ -11,7 +11,6 @@ app.use(cors());
 app.use(express.json());
 
 var wallets = LoadSampleWallets();
-
 app.get("/balance/:address", (req, res) => {
     const { address } = req.params;
     const balance = wallets[address].balance || 0;
